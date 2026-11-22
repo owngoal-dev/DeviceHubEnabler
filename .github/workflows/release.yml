@@ -100,8 +100,14 @@ jobs:
       - name: Audit root ownership
         run: bash Scripts/ci/audit.sh ownership
 
-      - name: Audit dylib slices and ad hoc signature
-        run: bash Scripts/ci/audit.sh binary
+      - name: Audit dylib slices
+        run: bash Scripts/ci/audit.sh slices
+
+      - name: Audit dylib ad hoc signature
+        run: bash Scripts/ci/audit.sh signature
+
+      - name: Audit dylib has no entitlements
+        run: bash Scripts/ci/audit.sh entitlements
 
       - name: Audit filter plist
         run: bash Scripts/ci/audit.sh filter

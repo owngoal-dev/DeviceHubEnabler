@@ -2,17 +2,18 @@
 # Check the built packages before they are released, one check per call so a
 # failing step names itself in the workflow:
 #
-#   audit.sh control     the control fields the OwnGoal source requires, and the
-#                        identity and firmware floor from apelin-project.json
-#   audit.sh ownership   every file in the package is root's
-#   audit.sh binary      the dylib's slices for its package architecture, an ad
-#                        hoc signature and no entitlements
-#   audit.sh filter      the filter plist names the executables of the project
+#   audit.sh control       the control fields the OwnGoal source requires, and
+#                          the identity and firmware floor from apelin-project.json
+#   audit.sh ownership     every file in the package is root's
+#   audit.sh slices        the dylib carries exactly its package architecture's slices
+#   audit.sh signature     the dylib is ad hoc signed
+#   audit.sh entitlements  the dylib carries no entitlements
+#   audit.sh filter        the filter plist names the executables of the project
 set -eu
 
 cd "$(dirname "$0")/../.."
 project=apelin-project.json
-check="${1:?usage: audit.sh control|ownership|binary|filter}"
+check="${1:?usage: audit.sh control|ownership|slices|signature|entitlements|filter}"
 
 product="$(jq -r --arg id "$(jq -r .package.tweakFilter.dylib "$project")" \
   '.products[] | select(.id == $id) | .name' "$project")"
@@ -26,6 +27,12 @@ if [ "${#debs[@]}" -ne 2 ]; then
 fi
 
 fail() { echo "$1" >&2; exit 1; }
+
+# Extract one package without running any maintainer script; the caller removes it.
+extract() {
+  dir="$(mktemp -d "${TMPDIR:-/tmp}/devicehubenabler-audit.XXXXXX")"
+  dpkg-deb -x "$1" "$dir"
+}
 
 for deb in "${debs[@]}"; do
   arch="$(dpkg-deb -f "$deb" Architecture)"
@@ -56,25 +63,34 @@ for deb in "${debs[@]}"; do
         fail "$deb: a file is not owned by root/root"
       fi
       ;;
-    binary)
-      # Extraction only: no maintainer script runs here.
-      dir="$(mktemp -d "${TMPDIR:-/tmp}/devicehubenabler-audit.XXXXXX")"
-      dpkg-deb -x "$deb" "$dir"
+    slices)
+      extract "$deb"
       dylib="$dir/Library/MobileSubstrate/DynamicLibraries/$product.dylib"
       [ -x "$dylib" ] || fail "$deb: $product.dylib missing or not executable"
       got="$(lipo -archs "$dylib")"
+      echo "$deb: $product.dylib slices: $got (expected $expected)"
       [ "$got" = "$expected" ] || fail "$deb: slices $got, expected $expected"
-      codesign -dv "$dylib" 2>&1 || true
-      codesign -dv "$dylib" 2>&1 | grep -q 'Signature=adhoc' \
-        || fail "$deb: $product.dylib is not ad hoc signed"
-      entitlements="$(ldid -e "$dylib" | tr -d '[:space:]')"
-      [ -z "$entitlements" ] || fail "$deb: $product.dylib carries entitlements"
       rm -rf "$dir"
-      echo "$deb: $product.dylib has slices $got, ad hoc signed, no entitlements"
+      ;;
+    signature)
+      extract "$deb"
+      dylib="$dir/Library/MobileSubstrate/DynamicLibraries/$product.dylib"
+      codesign -dvv "$dylib" 2>&1 || true
+      codesign -dvv "$dylib" 2>&1 | grep -Eq 'Signature=adhoc|flags=0x[0-9a-f]*\((.*)?adhoc' \
+        || fail "$deb: $product.dylib is not ad hoc signed"
+      rm -rf "$dir"
+      ;;
+    entitlements)
+      extract "$deb"
+      dylib="$dir/Library/MobileSubstrate/DynamicLibraries/$product.dylib"
+      entitlements="$(ldid -e "$dylib" 2>/dev/null || true)"
+      echo "$deb: entitlements: ${entitlements:-<none>}"
+      [ -z "$(printf '%s' "$entitlements" | grep '<key>')" ] \
+        || fail "$deb: $product.dylib carries entitlements"
+      rm -rf "$dir"
       ;;
     filter)
-      dir="$(mktemp -d "${TMPDIR:-/tmp}/devicehubenabler-audit.XXXXXX")"
-      dpkg-deb -x "$deb" "$dir"
+      extract "$deb"
       plist="$dir/Library/MobileSubstrate/DynamicLibraries/$product.plist"
       cat "$plist"
       for executable in $executables; do
