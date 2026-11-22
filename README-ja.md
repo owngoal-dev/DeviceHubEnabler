@@ -26,7 +26,7 @@ DeviceHub は Developer Disk Image（DDI）内の `dtremotedisplayd` を介し�
 
 ## インストール
 
-ブートストラップに合う `.deb`（rootless は `iphoneos-arm64`、roothide は `iphoneos-arm64e`）をインストールします。respring は不要です。インストール時に `dtremotedisplayd` が動いていれば postinst が再起動して Tweak を読み込みます。動いていなければ何もせず、次に Mac を接続したときに CoreDevice が Tweak 込みで起動します。
+ブートストラップに合う `.deb`（rootless は `iphoneos-arm64`、roothide は `iphoneos-arm64e`）を、[Releases](https://github.com/owngoal-dev/DeviceHubEnabler/releases) または OwnGoal ソース `https://apt.owngoal.dev/` からインストールします。respring は不要です。インストール時に `dtremotedisplayd` が動いていれば postinst が再起動して Tweak を読み込みます。動いていなければ何もせず、次に Mac を接続したときに CoreDevice が Tweak 込みで起動します。
 
 ## 確認
 

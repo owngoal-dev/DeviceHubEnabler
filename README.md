@@ -26,7 +26,7 @@ The three Swift symbols are looked up by their mangled names; if any is missing,
 
 ## Install
 
-Install the `.deb` for your bootstrap (`iphoneos-arm64` for rootless, `iphoneos-arm64e` for roothide). No respring is needed. If `dtremotedisplayd` is running, the postinst restarts it so the tweak is picked up; if not, CoreDevice starts it with the tweak the next time a Mac connects.
+Install the `.deb` for your bootstrap (`iphoneos-arm64` for rootless, `iphoneos-arm64e` for roothide) from the [releases](https://github.com/owngoal-dev/DeviceHubEnabler/releases) or the OwnGoal source `https://apt.owngoal.dev/`. No respring is needed. If `dtremotedisplayd` is running, the postinst restarts it so the tweak is picked up; if not, CoreDevice starts it with the tweak the next time a Mac connects.
 
 ## Verify
 

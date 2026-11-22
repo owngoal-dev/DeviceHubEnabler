@@ -26,7 +26,7 @@ DeviceHub 通过开发者磁盘镜像（DDI）里的 `dtremotedisplayd` 查看�
 
 ## 安装
 
-按引导安装对应的 `.deb`（rootless 为 `iphoneos-arm64`，roothide 为 `iphoneos-arm64e`），不需要 respring。安装时 `dtremotedisplayd` 若正在运行，postinst 会重启它以加载插件；没在运行则不动，下次 Mac 连接时由 CoreDevice 带插件拉起。
+按引导安装对应的 `.deb`（rootless 为 `iphoneos-arm64`，roothide 为 `iphoneos-arm64e`），可从 [Releases](https://github.com/owngoal-dev/DeviceHubEnabler/releases) 或 OwnGoal 源 `https://apt.owngoal.dev/` 获取，不需要 respring。安装时 `dtremotedisplayd` 若正在运行，postinst 会重启它以加载插件；没在运行则不动，下次 Mac 连接时由 CoreDevice 带插件拉起。
 
 ## 验证
 
