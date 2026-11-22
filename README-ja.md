@@ -22,6 +22,7 @@ DeviceHub は Developer Disk Image（DDI）内の `dtremotedisplayd` を介し�
 | iOS | 17.0 – 26.x（それ未満は従来の `DeveloperDiskImage` 経路で Xcode 27 は非対応。27 以降はデバイス自身が機能を報告） |
 | custom firmware | rootless または roothide。`mobilesubstrate`（ElleKit）が必要 |
 | Xcode | 27.x（DeviceHub 含む） |
+| 検証済み | iPhone16,1（iPhone 15 Pro Max）/ iOS 17.3.1 / roothide、Xcode 27：View Screen の画面とシステム音声を確認済み |
 
 ## インストール
 

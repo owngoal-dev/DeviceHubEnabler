@@ -22,6 +22,7 @@ The three Swift symbols are looked up by their mangled names; if any is missing,
 | iOS | 17.0 – 26.x (older: legacy `DeveloperDiskImage` path, not supported by Xcode 27; 27+: reports the features itself) |
 | Custom firmware | rootless or roothide with `mobilesubstrate` (ElleKit) |
 | Xcode | 27.x with DeviceHub |
+| Verified | iPhone16,1 (iPhone 15 Pro Max) on iOS 17.3.1, roothide, Xcode 27: View Screen picture and system audio |
 
 ## Install
 
