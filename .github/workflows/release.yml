@@ -92,10 +92,10 @@ jobs:
           dpkg-deb --version | head -n1
 
       - name: Build both packages
-        run: Scripts/ci/build.sh
+        run: bash Scripts/ci/build.sh
 
       - name: Audit the packages
-        run: Scripts/ci/audit.sh
+        run: bash Scripts/ci/audit.sh
 
       - name: SHA256SUMS from exactly the released files
         working-directory: build
