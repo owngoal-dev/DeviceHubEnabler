@@ -94,16 +94,16 @@ jobs:
       - name: Build both packages
         run: bash Scripts/ci/build.sh
 
-      - name: Audit: control fields and identity
+      - name: Audit control fields and identity
         run: bash Scripts/ci/audit.sh control
 
-      - name: Audit: root ownership
+      - name: Audit root ownership
         run: bash Scripts/ci/audit.sh ownership
 
-      - name: Audit: dylib slices and ad hoc signature
+      - name: Audit dylib slices and ad hoc signature
         run: bash Scripts/ci/audit.sh binary
 
-      - name: Audit: filter plist
+      - name: Audit filter plist
         run: bash Scripts/ci/audit.sh filter
 
       - name: SHA256SUMS from exactly the released files
