@@ -1,0 +1,17 @@
+#!/bin/sh
+# Restart the DDI's screen-viewing daemon only when it is already running, so
+# a daemon started before this package was installed picks up the tweak.
+# CoreDevice starts it when a Mac connects; this script never starts it itself.
+set -e
+
+case "$1" in
+configure)
+    PATH="@PREFIX@/usr/bin:@PREFIX@/bin:@ROOTFS@/usr/bin:@ROOTFS@/bin"
+    service="user/501/com.apple.coredevice.dtremotedisplayd"
+    if launchctl print "${service}" 2>/dev/null | grep -Eq '^[[:space:]]*state = running[[:space:]]*$'; then
+        launchctl kickstart -k "${service}" >/dev/null 2>&1 || true
+    fi
+    ;;
+esac
+
+exit 0

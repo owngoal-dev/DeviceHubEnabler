@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "projectID": "ea7d59f1-bc53-493f-80cb-ae8ea81846fd",
+  "kind": "tweak",
+  "template": {
+    "extensionID": "wiki.qaq.apelin.dev.tweak",
+    "templateID": "objc-hook",
+    "version": "0.1.1",
+    "digest": "sha256:f7aa0129fcb88ba57ea493d55f34828fd0bc1a435e5a0e3145dedf16118d4dc6"
+  },
+  "environment": {
+    "toolchain": {
+      "id": "5e4ad6d5b38a3e6979cd5996",
+      "digest": "sha256:39c74b059efeefe5fa5e731a90959a94749bf922e5827e74f0ee1e62270ea115"
+    },
+    "sdk": {
+      "id": "iphoneos17.4-8618351c",
+      "digest": "sha256:8618351cbc242b134f8f6a7585d7d689e29ab148be51f5fe24eb07c26cd67983"
+    }
+  },
+  "language": "objc",
+  "deploymentTarget": "17.0",
+  "architectures": {
+    "rootless": [
+      "arm64",
+      "arm64e"
+    ],
+    "roothide": [
+      "arm64e"
+    ]
+  },
+  "configurations": {
+    "Debug": {
+      "optimization": "0",
+      "debugInfo": true,
+      "defines": {
+        "DEBUG": "1"
+      }
+    },
+    "Release": {
+      "optimization": "2",
+      "debugInfo": true
+    }
+  },
+  "products": [
+    {
+      "id": "tweak",
+      "type": "dylib",
+      "name": "DeviceHubEnabler",
+      "sources": [
+        "Sources/*.m"
+      ],
+      "headerSearchPaths": [
+        "Sources"
+      ],
+      "objcARC": true,
+      "frameworks": [
+        "Foundation"
+      ],
+      "libraries": [
+        "substrate"
+      ],
+      "extensionSupport": [
+        {
+          "extension": "wiki.qaq.apelin.dev.tweak",
+          "component": "substrate"
+        }
+      ]
+    }
+  ],
+  "build": {
+    "steps": [
+      {
+        "type": "compile",
+        "product": "tweak"
+      },
+      {
+        "type": "link",
+        "product": "tweak"
+      },
+      {
+        "type": "lipo",
+        "product": "tweak"
+      },
+      {
+        "type": "dsym",
+        "product": "tweak"
+      },
+      {
+        "type": "strip",
+        "product": "tweak",
+        "style": "non-global"
+      },
+      {
+        "type": "sign",
+        "product": "tweak",
+        "identity": "adhoc"
+      }
+    ]
+  },
+  "package": {
+    "id": "wiki.qaq.devicehubenabler",
+    "name": "DeviceHubEnabler",
+    "version": "0.1.0",
+    "description": "Enables Xcode DeviceHub screen viewing and system audio on iOS 17–26 devices running custom firmware.",
+    "icon": "https://owngoal-dev.github.io/Apelin/icons/wiki.qaq.apelin.dev.tweak.png",
+    "author": "Lakr233 <git@qaq.wiki>",
+    "section": "Tweaks",
+    "depends": [
+      "mobilesubstrate"
+    ],
+    "layout": [
+      {
+        "path": "/Library/MobileSubstrate/DynamicLibraries/DeviceHubEnabler.dylib",
+        "product": "tweak"
+      }
+    ],
+    "maintainerScripts": {
+      "postinst": "Scripts/postinst"
+    },
+    "tweakFilter": {
+      "dylib": "tweak",
+      "executables": [
+        "dtremotedisplayd"
+      ]
+    }
+  }
+}
