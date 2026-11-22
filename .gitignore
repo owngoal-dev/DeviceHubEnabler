@@ -1,0 +1,3 @@
+# Build output of Scripts/ci (CI and local checks); packages are released,
+# never committed.
+build/

@@ -1,0 +1,140 @@
+# Tag vX.Y.Z → build the roothide and rootless packages without Theos, straight
+# from Sources/*.m and apelin-project.json, and publish a GitHub Release with
+# them and a SHA256SUMS. owngoal-packages indexes a repository's newest stable
+# release, so the release is published, not left as a draft. A manual run
+# (workflow_dispatch) only builds and audits, and uploads the packages as an
+# artifact. Shape: build → release; release needs build and checks the tag still
+# names the commit that was built.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*.[0-9]*.[0-9]*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Select newest stable Xcode
+        run: |
+          latest="$(find /Applications -maxdepth 1 -name 'Xcode*.app' | grep -viE 'beta|rc' | sort -V | tail -n1)"
+          sudo xcode-select -s "$latest/Contents/Developer"
+          xcodebuild -version
+          xcrun clang --version | head -n1
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Install packaging tools
+        run: |
+          brew install ldid dpkg
+          ldid -v 2>&1 | head -n1 || true
+          dpkg-deb --version | head -n1
+
+      - name: The tag names the committed version
+        if: github.ref_type == 'tag'
+        run: |
+          set -euo pipefail
+          version="$(jq -r .package.version apelin-project.json)"
+          [ "${GITHUB_REF_NAME#v}" = "$version" ] || {
+            echo "tag ${GITHUB_REF_NAME} but apelin-project.json says ${version}" >&2; exit 1; }
+
+      - name: Build both packages
+        run: Scripts/ci/build.sh
+
+      - name: Audit the packages
+        run: Scripts/ci/audit.sh
+
+      - name: SHA256SUMS from exactly the released files
+        working-directory: build
+        run: |
+          shasum -a 256 ./*.deb | sed 's| \./| |' >SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Job summary
+        working-directory: build
+        run: |
+          {
+            echo "### Packages $(jq -r .package.version ../apelin-project.json) (\`$GITHUB_SHA\`)"
+            echo
+            echo "| File | Architecture | Depends |"
+            echo "| --- | --- | --- |"
+            for deb in ./*.deb; do
+              echo "| $(basename "$deb") | $(dpkg-deb -f "$deb" Architecture) | $(dpkg-deb -f "$deb" Depends) |"
+            done
+            echo
+            echo '```'
+            cat SHA256SUMS
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: packages
+          path: |
+            build/*.deb
+            build/SHA256SUMS
+          if-no-files-found: error
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: The tag still names the built commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          now="$(gh api "repos/$GH_REPO/commits/${GITHUB_REF_NAME}" --jq .sha)"
+          [ "$now" = "$GITHUB_SHA" ] || {
+            echo "tag ${GITHUB_REF_NAME} now names $now, built $GITHUB_SHA" >&2; exit 1; }
+
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: packages
+          path: dist
+
+      - name: Verify checksums and publish
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          sha256sum -c SHA256SUMS
+          tag="$GITHUB_REF_NAME"
+          version="${tag#v}"
+          commit_message="$(gh api "repos/$GH_REPO/commits/$GITHUB_SHA" --jq .commit.message)"
+          {
+            echo "$commit_message"
+            echo
+            echo "Roothide (\`iphoneos-arm64e\`) and rootless (\`iphoneos-arm64\`, arm64 and arm64e) packages, built by this workflow from \`$GITHUB_SHA\`."
+            echo
+            echo '```'
+            cat SHA256SUMS
+            echo '```'
+          } >release-notes.md
+          if gh release view "$tag" >/dev/null 2>&1; then
+            # The release was created first, for example on the web; fill it in.
+            gh release upload "$tag" ./*.deb SHA256SUMS --clobber
+            gh release edit "$tag" --title "DeviceHubEnabler $version" --notes-file release-notes.md
+          else
+            gh release create "$tag" ./*.deb SHA256SUMS --verify-tag \
+              --title "DeviceHubEnabler $version" --notes-file release-notes.md
+          fi
+          echo "### Published release $tag" >>"$GITHUB_STEP_SUMMARY"
