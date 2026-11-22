@@ -8,9 +8,9 @@
 #   Scripts/ci/build.sh                    both packages land in build/
 #   DHE_SKIP_DEB=1 Scripts/ci/build.sh     stage the package trees only, no dpkg-deb
 #
-# Needs clang with the iPhoneOS SDK (SDKROOT, or `xcrun --sdk iphoneos`), jq,
-# lipo, strip, ldid and, unless DHE_SKIP_DEB is set, dpkg-deb. Written for the
-# macOS runner's bash 3.2.
+# Needs clang with the iPhoneOS SDK (SDKROOT, or `xcrun --sdk iphoneos`),
+# jq, lipo, strip, codesign (Xcode's) and, unless DHE_SKIP_DEB is set,
+# dpkg-deb. Written for the macOS runner's bash 3.2.
 set -eu
 
 cd "$(dirname "$0")/../.."
@@ -81,7 +81,9 @@ for bootstrap in roothide rootless; do
     lipo -create "${slices[@]}" -output "$dylib"
   fi
   strip -x "$dylib"
-  ldid -S "$dylib"
+  # Ad hoc, as Apelin signs on a device. codesign signs every slice of a
+  # universal binary; brew's ldid left the arm64e slice unsigned.
+  codesign --force --sign - "$dylib"
 
   # The package tree as the installer sees it: the dylib and its filter under
   # /Library/MobileSubstrate/DynamicLibraries, the control and maintainer scripts.

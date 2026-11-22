@@ -75,19 +75,18 @@ for deb in "${debs[@]}"; do
     signature)
       extract "$deb"
       dylib="$dir/Library/MobileSubstrate/DynamicLibraries/$product.dylib"
-      echo "ldid -v: $(ldid -v 2>&1 | head -n1)"
-      echo "codesign -dvv:"
       codesign -dvv "$dylib" 2>&1 || echo "codesign -dvv exit $?"
-      echo "codesign -v:"
-      codesign -v "$dylib" 2>&1 || echo "codesign -v exit $?"
+      codesign -v "$dylib" 2>&1 || fail "$deb: $product.dylib signature does not verify"
       codesign -dvv "$dylib" 2>&1 | grep -Eq 'Signature=adhoc|flags=0x[0-9a-f]*\((.*)?adhoc' \
         || fail "$deb: $product.dylib is not ad hoc signed"
+      codesign -dvv "$dylib" 2>&1 | grep -q '^TeamIdentifier=not set$' \
+        || fail "$deb: $product.dylib carries a team identifier"
       rm -rf "$dir"
       ;;
     entitlements)
       extract "$deb"
       dylib="$dir/Library/MobileSubstrate/DynamicLibraries/$product.dylib"
-      entitlements="$(ldid -e "$dylib" 2>/dev/null || true)"
+      entitlements="$(codesign -d --entitlements - --xml "$dylib" 2>/dev/null || true)"
       echo "$deb: entitlements: ${entitlements:-<none>}"
       [ -z "$(printf '%s' "$entitlements" | grep '<key>')" ] \
         || fail "$deb: $product.dylib carries entitlements"

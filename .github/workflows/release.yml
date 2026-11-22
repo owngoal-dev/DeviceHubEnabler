@@ -87,9 +87,9 @@ jobs:
 
       - name: Install packaging tools
         run: |
-          brew install ldid dpkg
-          ldid -v 2>&1 | head -n1 || true
+          brew install dpkg
           dpkg-deb --version | head -n1
+          codesign --version
 
       - name: Build both packages
         run: bash Scripts/ci/build.sh
