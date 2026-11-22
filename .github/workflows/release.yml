@@ -89,7 +89,7 @@ jobs:
         run: |
           brew install dpkg
           dpkg-deb --version | head -n1
-          codesign --version
+          command -v codesign
 
       - name: Build both packages
         run: bash Scripts/ci/build.sh
