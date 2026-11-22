@@ -104,7 +104,13 @@ jobs:
         run: bash Scripts/ci/audit.sh slices
 
       - name: Audit dylib ad hoc signature
-        run: bash Scripts/ci/audit.sh signature
+        # codesign's own words go into an annotation, which is readable without
+        # the Actions log.
+        run: |
+          out="$(bash Scripts/ci/audit.sh signature 2>&1)" && printf '%s\n' "$out" || {
+            printf '::error title=audit signature::%s\n' "$(printf '%s' "$out" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')"
+            exit 1
+          }
 
       - name: Audit dylib has no entitlements
         run: bash Scripts/ci/audit.sh entitlements
